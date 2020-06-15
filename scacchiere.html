@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Scacchi</title>
+	<!--
+	scacchiera by Paolo Baruffaldi
+	Viadana, 2020-06-05
+	-->
+<style>
+
+:root {
+  --col1: #5E3719FF;
+  --col2: #73523844;
+  --col3: #886E5844;
+  --col4: #9D897744;
+  --col5: #B2A496FF;
+}
+
+h2 {text-align:center;font-family: Papyrus,fantasy; }
+
+
+#box_scacchiera {border: solid 1px;blue;width:90vh;height:90vh;position:absolute;left:5px;top:5vh}
+.casella {
+	border:solid 1px black;
+	width:12.4%;height:12.5%;font-size:80px;padding:0;text-align:center;
+	position:absolute;
+	background-color: var(--col1);
+	box-shadow:
+    12px 12px 16px 0 rgba(0, 0, 0, 0.25),
+    -8px -8px 12px 0 rgba(255, 255, 255, 0.3);
+	background:
+	linear-gradient(90deg, var(--col1) 0%, var(--col3)  5%, #FFFFFF00  40%, #FFFFFF00 90%, var(--col4) 95%),
+	linear-gradient(0deg, var(--col1) 0%, var(--col3)  5%, #FFFFFF00  40%, #FFFFFF00 90%, var(--col3) 95%);
+}
+
+.pari {	background-color: var(--col5);}
+
+.cella_focus {background-color:#FFFF00}
+
+.playerA {color:#4444CC}
+.playerB {color:#000000;}
+
+
+#scelta_gioco .casella {position:relative;height:24vh;width:24vh;font-size:60px;}
+
+#box_msg {position:absolute;left:20vw;top:20vh;width:60vw;height:200px;
+	border:solid 5px var(--col1);
+	background-color: var(--col5);
+	text-align:center;
+	font-size:5vh;
+	box-shadow: 30px 30px 30px 0 var(--col5);
+	display:none;
+
+}
+</style>
+</head>
+<body>
+<script src="scacchiere.js"></script>
+<script>chess.msg('ciao');</script>
+<h2 id="caption"></h2>
+<div id="box_scacchiera">
+	<h2><span>Scegliere il Gioco</span>:</h2>
+	<div id="scelta_gioco">
+	<table>
+	<tr>
+		<td><div onclick="new_game('puzzle',{'size':3})" class="casella"><span>Puzzle numerico</span> 3x3</div></td>
+		<td><div onclick="new_game('puzzle',{'size':4})" class="casella pari"><span>Puzzle numerico</span> 4x4</div></td>
+		<td><div onclick="new_game('puzzle',{'size':5})" class="casella"><span>Puzzle numerico</span> 5x5</div></td>
+	</tr><tr>
+		<td><div onclick="new_game('bastiglia')" class="casella pari"><span>Solitario della Bastiglia</span></div></td>
+		<td><div onclick="new_game('bastiglia',{'pos_ini':'bastiglia_ue'})" class="casella"><span>Solitario della Bastiglia Europeo</span></div></td>
+		<td><div onclick="new_game('dama')" class="casella pari"><span>Dama</span> ◉</div></td>
+	</tr><tr>
+		<td><div onclick="new_game('puzzle',{'size':3,'image':'puzzle$.jpg'})" class="casella"><span>Puzzle immagine</span> 3x3</div>
+		<td><div onclick="new_game('puzzle',{'size':4,'image':'sdq$.jpg'})" class="casella pari"><span>Puzzle immagine</span> 4x4</div>
+		<td><div onclick="new_game('scacchi')" class="casella"><span>Scacchi</span> ♚</div></td>
+	</tr><tr>
+		<td colspan="3">by Paolo Baruffaldi - <span>Giugno</span> 2020</td>
+	</tr>
+	</table>
+</div>
+</div>
+<div id="box_msg" onclick="this.style.display='none';">Errore
+
+
+</div>
+<script>
+
+function crea_scacchiera(gioco,options = {}){
+
+	document.styleSheets[0].cssRules[3].style.width=(100/chess.size)+'%';
+	document.styleSheets[0].cssRules[3].style.height=(100/chess.size)+'%';
+
+	var r1 = document.getElementById('box_scacchiera');
+	for (var y=0;y < chess.size;y++){
+	for (var x=0;x < chess.size;x++){
+		var j = document.createElement('div');
+		var id1 = 'c_'+x+'_'+y;
+		j.id = id1;
+		j.style.left = (x*100/chess.size)+"%";
+		j.style.top = (y*100/chess.size)+"%";
+		j.classList.add('casella');
+		j.setAttribute('onClick','chess.cliccato("'+x+'","'+y+'")');
+		if ((x+y) % 2 == 0) {j.classList.add('pari')}
+		r1.appendChild(j);
+		chess.disegna_casella(x,y);
+
+
+	}
+	}
+
+}
+
+
+function new_game(gioco, options = {}){
+	chess.init(gioco, options);
+	document.getElementById('box_scacchiera').innerHTML = '';
+	crea_scacchiera(gioco, options);
+}
+
+span_i18n();
+</script>
+
+
+</body>
+</html>
