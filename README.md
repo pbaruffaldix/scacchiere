@@ -17,3 +17,5 @@ made with HTML + Javascript
 uncompleted:
 - Chess
 - Draughts
+
+[:: try it ::](http://htmlpreview.github.io/?https://github.com/pbaruffaldix/scacchiere/blob/master/scacchiere.html)
