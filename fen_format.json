@@ -1,0 +1,52 @@
+/*
+
+# Forsyth–Edwards Notation
+
+Forsyth–Edwards Notation (FEN) is a standard notation for describing a particular board position of a chess game
+
+[ ] (https://en.wikipedia.org/wiki/Forsyth–Edwards_Notation)
+
+Conversione del formato da Forsyth–Edwards Notation al formato
+
+
+rules:
+
+- "/" separates ranks (rows)
+- pawn = "P", knight = "N", bishop = "B", rook = "R", queen = "Q" and king = "K").
+- White pieces are designated using upper-case letters ("PNBRQK")
+- black pieces use lowercase ("pnbrqk").
+- Empty squares are noted using digits 1 through 8 (the number of empty squares),
+
+at the end of the description of current position a space then "w" or "b"
+
+*/
+
+const [DAMA, TORRE, CAVALLO,ALFIERE,REGINA,RE, PEDINA] = ['DAMA', 'TORRE', 'CAVALLO', 'ALFIERE', 'REGINA', 'RE','PEDINA'];
+
+var fen2js = {
+// '1': null, '2': null, '3': null, '4': null,'5': null, '6': null, '7': null, '8': null,
+'P': PEDINA,
+'N': CAVALLO,
+'B': ALFIERE,
+'Q': REGINA,
+'R': TORRE,
+'K': RE
+}
+
+
+function fen2array(txt1) {
+  var ris = [];
+  var rows = 0;
+  for (var n = 0 ; n < txt1.length; n++){
+    if (txt1[n] == '/'){
+      rows+=1;
+      ris.push([]);
+    } else if (txt1[n] ) {
+    ris[rows].push('null')
+    }
+  }
+
+}
+
+
+}

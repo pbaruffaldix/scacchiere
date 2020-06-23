@@ -53,7 +53,8 @@ var pos_ini = {
 		}
 
 var chess = {
-	simboli: {TORRE:'♜', CAVALLO:'♞', ALFIERE:'♝', RE:'♚', REGINA:'♛', PEDINA:'♙', DAMA:'◉'},
+	//simboli: {TORRE:'♜', CAVALLO:'♞', ALFIERE:'♝', RE:'♚', REGINA:'♛', PEDINA:'♙', DAMA:'◉'},
+	simboli: {TORRE:'♜', CAVALLO:'♞', ALFIERE:'♝', RE:'♚', REGINA:'♛', PEDINA:'<img src="pawn.svg">', DAMA:'◉'},
 	init:function (gioco, options = {}){
 		this.gioco = gioco;
 		if ('size' in options){
@@ -79,7 +80,7 @@ var chess = {
 			}
 			this.mossa_valida = this.bastiglia_mossa_valida;
 		} else {
-			this.mossa_valida = this.mossa_valida_scacchi;
+			this.mossa_valida = this.scacchi_mossa_valida;
 		}
 		this.from = null;							// da dove
 		this.to = null; 							// a dove
@@ -127,8 +128,17 @@ var chess = {
 		console.log(a);
 		if (t!='log') {
 		var m1 = document.getElementById('box_msg');
-		if (t == 'win') {m1.innerHTML = "<b style='color:#FFFF00'>"+a+"<b>"};
-		m1.style.display='block';
+		if (t == 'win') {
+			m1.innerHTML = "<b style='color:#FFFF00'>"+a+"<b>";
+			m1.style.display='block';
+			}
+		else if (t == 'info') {
+			m1.innerHTML = "<b style='color:#FF00FF'>"+a+"<b>";
+			m1.style.display='block';
+			} else if (t =='err') {
+			m1.innerHTML = "<b style='color:#FF0000'>"+a+"<b>";
+			m1.style.display='block';
+			}
 		}
 	},
 	is_free_road: function (m) {
@@ -149,7 +159,10 @@ var chess = {
 		} else if (i1[0] == 'del'){
 			c1.parentNode.removeChild(c1);
 		} else {
-			c1.innerHTML = chess.simboli[i1[0]];
+			c1.innerHTML = chess.simboli[i1[0]]
+			if (this.gioco == 'scacchi') {
+				c1.innerHTML+= "<span style='font-size:14px;display:block;'>x="+x+" y="+y+"</span>";
+				}
 		}
 		c1.classList.remove('playerA');
 		c1.classList.remove('playerB');
@@ -200,19 +213,28 @@ var chess = {
 					this.disegna_casella(x,y);
 					this.disegna_casella(x_from,y_from);
 					this.sfocalizza();
+					// verifica vincita e cambio turno
+					next_player = (this.turn_of == 'playerA') ? 'playerB' : 'playerA';
 					if (this.gioco == 'bastiglia') {
+						next_player = this.turn_of;
 						if (this.quanti[this.turn_of] == 1) {
 							this.msg('HAI VINTO!','win');
 						}
-					} else if (!(this.gioco == 'puzzle')) {
-						this.turn_of = (this.turn_of == 'playerA') ? 'playerB' : 'playerA';
+					} else if (this.gioco == 'scacchi'){
+						next_player = (this.turn_of == 'playerA') ? 'playerB' : 'playerA';
+						if (this.scacchi_scaccano(next_player).length>0) {
+							this.msg('Scacco a '+ next_player + "!",'info');
+							}
+					} else if (this.gioco == 'puzzle'){
+						next_player = this.turn_of;
 					}
+					this.turn_of = next_player;
 					this.set_title();
 				}
 			}
 		}
 	},
-	// - - - -  - - - -  - - - - fx specifiche per singolo gioco  - - - -  - - - -  - - - -
+// ==================================================================== SEZIONE:DAMA
 	dama_mossa_valida: function (x1, y1){
 	var x0 = this.from[1] * 1;
 	var y0 = this.from[0] * 1;
@@ -234,6 +256,7 @@ var chess = {
 		}
 	return false;
 	},
+// ==================================================================== SEZIONE:PUZZLE
 	puzzle_mossa_valida: function (x1,y1){
 		var x0 = this.from[1] * 1;
 		var y0 = this.from[0] * 1;
@@ -277,6 +300,7 @@ var chess = {
 		}
 		return true
 	},
+// ==================================================================== SEZIONE:BASTIGLIA
 	bastiglia_mossa_valida: function (x1,y1){
 		var x0 = this.from[1] * 1;
 		var y0 = this.from[0] * 1;
@@ -295,8 +319,146 @@ var chess = {
 				}
 			}
 		return false;
+	},
+// ==================================================================== SEZIONE:SCACCHI
+	scacchi_mossa_valida: function (x1, y1){
+		var x0 = this.from[1] * 1;
+		var y0 = this.from[0] * 1;
+		var dx = x1 - this.from[1];
+		var dy = y1 - this.from[0];
+		if ((this.mem[y1][x1] != null) && (this.mem[y1][x1][1] == this.turn_of)) {
+			this.msg('non puoi mangiare i tuoi stessi pezzi','err')
+			return false;
+		} else {
+			var possibile = this.scacchi_ipotesi(x0,y0,x1,y1);
+			if (possibile == true){
+				// a questo punto muovo
+				var old1 = this.mem[y1][x1];
+				this.mem[y1][x1] = this.mem[y0][x0];
+				var scaccano = this.scacchi_scaccano(this.turn_of);
+				console.log("scaccano>");
+				console.log(scaccano);
+				if (scaccano.length > 0){
+					this.msg('Devi liberarti dallo scacco!','err'); // e torno indietro;
+					this.mem[y0][x0] = this.mem[y1][x1];
+					this.mem[y1][x1] = old1;
+					return false;
+					}
+
+				// var scaccano = this.scacchi_scaccano(this.turn_of); // la mossa lascia sotto scacchi?
+				// 		se è scacco matto ho vinto
+				// altrimenti se mi lascio sotto scacco => la mossa non è valida
+				return true;
+				}
+			else {return false;}
+		}
+
+	},
+	scacchi_ipotesi: function (x0, y0, x1, y1){
+		var possibile = false;
+		var dx = x1 - x0;
+		var dy = y1 - y0;
+		var muovo = this.mem[y0][x0];
+		if (muovo[0] == TORRE) {
+			if ((abs(dx)*abs(dy)) == 0) {
+				if (this.scacchi_libero(x0,y0,dx,dy)) {possibile = true}
+			}
+		} else if (muovo[0] == CAVALLO){
+			if ( (abs(dx)+abs(dy)) == 3 && abs(abs(dx) - abs(dy)) == 1) {possibile = true;}
+		} else if (muovo[0] == PEDINA) {
+			if (this.turn_of == 'playerA'){
+				var dy_verso = 1;
+				if (dy*dy_verso == 2) {
+					// muove di 2 solo da y0=1 e se le due celle davanti sono vuote
+					if (dx == 0 && y0 == 1 && this.mem[2][x0] == null && this.mem[3][x0] == null) {possibile = true}
+					}
+			} else {
+				var dy_verso = -1;
+				if (dy*dy_verso == 2) {
+					// muove di 2 solo da y0=6 e se le due celle davanti sono vuote
+					if (dx == 0 && y0 == 6 && this.mem[5][x0] == null && this.mem[4][x0] == null) {possibile = true}
+					}
+			}
+
+			if (dy*dy_verso == 1){
+				if (dx == 0) {
+					if (this.mem[y1][x1] == null){possibile = true;}
+				} else if (abs(dx) == 1){
+					if (this.mem[y1][x1] != null){possibile = true;}
+				}
+			}
+		} else if (muovo[0] == RE) {
+			if (abs(dx)<2 && abs(dy)<2) {possibile = true}
+		} else if (muovo[0] == ALFIERE) {
+			if (abs(dx) == abs(dy)){
+				if (this.scacchi_libero(x0,y0,dx,dy)) {possibile = true}
+			}
+		} else if (muovo[0] == REGINA) {
+			if (dx * dy * (abs(dx) - abs(dy))==0) {
+				if (this.scacchi_libero(x0,y0,dx,dy)) {possibile = true}
+			}
+		}
+		return possibile;
+	},
+	scacchi_scaccano: function (player){
+		var scaccano = [];
+		var il_re_x = 999;
+		var il_re_y = 999;
+		var verificare = [];
+		var volta = 0;
+		for (var idx_x = 0;idx_x < this.size; idx_x++){
+			for (var idx_y = 0;idx_y < this.size; idx_y++){
+				var pezzo = this.mem[idx_y][idx_x];
+				var c1 = document.getElementById('c_'+idx_x+'_'+idx_y);
+				c1.classList.remove('scaccano');
+				if (pezzo != null){
+					var c1 = document.getElementById('c_'+idx_x+'_'+idx_y);
+					c1.classList.remove('sotto_scacco');
+					if (pezzo[1] == player){
+						if (pezzo[0] == RE){
+							il_re_x = idx_x;
+							il_re_y = idx_y;
+							console.log('il re '+player+ 'sta in x=',il_re_x,' y=',il_re_y);
+							}
+					} else {
+					verificare.push([idx_x,idx_y]);
+					console.log('verificare se il pezzo in x=',idx_x,' y=',idx_y,'lo può mangiare');
+					}
+				}
+			}
+		}
+		console.log("verificare>")
+		console.log(verificare)
+		for (var guardo_n = 0; guardo_n < verificare.length; guardo_n++){
+			var idx_x = verificare[guardo_n][0];
+			var idx_y = verificare[guardo_n][1];
+
+			if (this.scacchi_ipotesi(idx_x,idx_y, il_re_x, il_re_y) == true){
+				console.log("this.scacchi_ipotesi(x0="+idx_x +",y0="+idx_y +", il_re_x="+ il_re_x +", il_re_y=" +il_re_y+ ") == true");
+				var c1 = document.getElementById('c_'+idx_x+'_'+idx_y);
+				c1.classList.add('scaccano');
+				scaccano.push([idx_x, idx_y]);
+			}
+		}
+	if (scaccano.length > 0){
+		var c1 = document.getElementById('c_'+il_re_x+'_'+il_re_y);
+		c1.classList.add('sotto_scacco');
+	}
+	return scaccano;
+	},
+	scacchi_libero: function (x0,y0,dx,dy){
+		var volte = Math.max(abs(dx),abs(dy));
+		for (var volta=1;volta<volte;volta++){
+			var tester = [y0+dy*volta/volte,x0+dx*volta/volte]
+			if (this.mem[tester[0]][tester[1]] != null) {
+				console.log("occupato"+tester )
+				return false;
+			}
+			}
+		return true;
 	}
 }
+
 
 // I18N
 

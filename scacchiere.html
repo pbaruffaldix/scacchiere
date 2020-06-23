@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
-	<title>Scacchi</title>
+	<title>Scacchiere.js</title>
 	<!--
 	scacchiera by Paolo Baruffaldi
 	Viadana, 2020-06-05
@@ -38,9 +38,78 @@ h2 {text-align:center;font-family: Papyrus,fantasy; }
 
 .cella_focus {background-color:#FFFF00}
 
-.playerA {color:#4444CC}
-.playerB {color:#000000;}
+.cella_focus img {
+	animation-duration: 5s;
+  	animation-name: anim_focus;
+  	animation-iteration-count: infinite;
+}
 
+.playerA {color:#4444CC}
+.playerA img {width:90%;height:90%;border-radius:60% 60% 30% 30%;background-color:rgba(27,27,80,0.5)}
+.playerB {color:#000000;}
+.playerB img {width:90%;height:90%;border-radius:60% 60% 30% 30%;background-color:rgba(0,0,0,0.5)}
+
+.scaccano {
+	animation-duration: 3s;
+  	animation-name: anim_scaccano;
+  	animation-iteration-count: infinite;
+}
+
+
+.sotto_scacco {
+	animation-duration: 3s;
+  	animation-name: anim_sotto_scacco;
+  	animation-iteration-count: infinite;
+  	}
+
+@keyframes anim_sotto_scacco {
+	from {
+		color:#880000;
+	}
+	to {
+		color:#FF0000;
+	}
+}
+
+@keyframes anim_focus {
+	0% {
+		transform:rotateY(0deg);
+
+	}
+	25% {
+		transform:rotateY(45deg);
+
+		}
+	50% {
+		transform:rotateY(0deg);
+
+	}
+	75% {
+		transform:rotateY(-45deg);
+
+		}
+}
+
+
+
+@keyframes anim_scaccano {
+	0% {
+		transform:rotate(0deg);
+		opacity:1;
+	}
+	25% {
+		transform:rotate(10deg);
+		opacity:0.5;
+		}
+	50% {
+		transform:rotate(0deg);
+		opacity:1;
+	}
+	75% {
+		transform:rotate(-10deg);
+		opacity:0.5;
+		}
+}
 
 #scelta_gioco .casella {position:relative;height:24vh;width:24vh;font-size:60px;}
 
@@ -53,6 +122,8 @@ h2 {text-align:center;font-family: Papyrus,fantasy; }
 	display:none;
 
 }
+
+
 </style>
 </head>
 <body>
@@ -70,16 +141,17 @@ h2 {text-align:center;font-family: Papyrus,fantasy; }
 	</tr><tr>
 		<td><div onclick="new_game('bastiglia')" class="casella pari"><span>Solitario della Bastiglia</span></div></td>
 		<td><div onclick="new_game('bastiglia',{'pos_ini':'bastiglia_ue'})" class="casella"><span>Solitario della Bastiglia Europeo</span></div></td>
-		<td><div onclick="new_game('dama')" class="casella pari"><span>Dama</span> ◉</div></td>
+		<td><div onclick="new_game('dama')" class="casella pari beta_version"><span>Dama</span> ◉ (partial)</div></td>
 	</tr><tr>
 		<td><div onclick="new_game('puzzle',{'size':3,'image':'puzzle$.jpg'})" class="casella"><span>Puzzle immagine</span> 3x3</div>
 		<td><div onclick="new_game('puzzle',{'size':4,'image':'sdq$.jpg'})" class="casella pari"><span>Puzzle immagine</span> 4x4</div>
-		<td><div onclick="new_game('scacchi')" class="casella"><span>Scacchi</span> ♚</div></td>
-	</tr><tr>
-		<td colspan="3">by Paolo Baruffaldi - <span>Giugno</span> 2020</td>
+		<td><div onclick="new_game('scacchi')" class="casella beta_version"><span>Scacchi</span> ♚ (partial)</div></td>
 	</tr>
 	</table>
 </div>
+	<div>&nbsp;</div>
+	<div style="color:#888800;text-align:center;">Warning: <i>Draughts</i> game is not complete yet and <i>Chess</i> has bugs on <i>check</i> / <i>check mate</i> procedure</div>
+	<div style="text-align:right;padding-right:20px;"> by Paolo Baruffaldi<br><a href="email:baruffaldi.p@gmail.com">baruffaldi.p@gmail.com</a><br><span>Giugno</span> 2020</div>
 </div>
 <div id="box_msg" onclick="this.style.display='none';">Errore
 
