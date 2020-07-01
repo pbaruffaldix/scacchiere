@@ -1,6 +1,11 @@
 function abs(x){return Math.abs(x)}
 
-const [DAMA, TORRE, CAVALLO,ALFIERE,REGINA,RE, PEDINA] = ['DAMA', 'TORRE', 'CAVALLO', 'ALFIERE', 'REGINA', 'RE','PEDINA'];
+const [DAMA, DAMONE, TORRE, CAVALLO,ALFIERE,REGINA,RE, PEDINA] = ['DAMA', 'DAMONE','TORRE', 'CAVALLO', 'ALFIERE', 'REGINA', 'RE','PEDINA'];
+
+const DIR_STR = {'-1.-1':'↖︎', '1.1':'↘', '-1.1':'↙', '1.-1': '↗︎' }
+
+const MV_EAT = 'mv_eat';
+const MV_OK = 'mv_ok';
 
 var pos_ini = {
 	 scacchi: [
@@ -53,9 +58,10 @@ var pos_ini = {
 		}
 
 var chess = {
-	//simboli: {TORRE:'♜', CAVALLO:'♞', ALFIERE:'♝', RE:'♚', REGINA:'♛', PEDINA:'♙', DAMA:'◉'},
-	simboli: {TORRE:'♜', CAVALLO:'♞', ALFIERE:'♝', RE:'♚', REGINA:'♛', PEDINA:'<img src="pawn.svg">', DAMA:'◉'},
+	//simboli: {TORRE:'♜', CAVALLO:'♞', ALFIERE:'♝', RE:'♚', REGINA:'♛', PEDINA:'♙', DAMA:'◉','DAMONE':'⊛'},
+	simboli: {TORRE:'♜', CAVALLO:'♞', ALFIERE:'♝', RE:'♚', REGINA:'♛', PEDINA:'<img class="tremola" src="pawn.svg">', DAMA:'◉',DAMONE:'⊛'},
 	init:function (gioco, options = {}){
+		this.start_time = Date.now();
 		this.gioco = gioco;
 		if ('size' in options){
 			this.size = options.size;
@@ -151,8 +157,11 @@ var chess = {
 	is_free: function (x,y) {
 		return true
 	},
+	get_casella: function (x,y){
+		return document.getElementById('c_'+x+'_'+y);
+	},
 	disegna_casella: function (x,y){
-		var c1 = document.getElementById('c_'+x+'_'+y);
+		var c1 = this.get_casella(x,y);
 		var i1 = chess.mem[y][x];
 		if (i1 == null){
 			c1.innerHTML = '';
@@ -187,7 +196,7 @@ var chess = {
 			chess.msg('Scelta x='+x + 'y=' +y,'log');
 			chess.from = [y, x];
 			chess.msg(i1,'log');
-		chess.cella_focus = document.getElementById('c_'+x+'_'+y);
+		chess.cella_focus = this.get_casella(x,y);
 		chess.cella_focus.classList.add('cella_focus');
 
 		} else {
@@ -218,7 +227,7 @@ var chess = {
 					if (this.gioco == 'bastiglia') {
 						next_player = this.turn_of;
 						if (this.quanti[this.turn_of] == 1) {
-							this.msg('HAI VINTO!','win');
+							this.vittoria();
 						}
 					} else if (this.gioco == 'scacchi'){
 						next_player = (this.turn_of == 'playerA') ? 'playerB' : 'playerA';
@@ -227,34 +236,140 @@ var chess = {
 							}
 					} else if (this.gioco == 'puzzle'){
 						next_player = this.turn_of;
+					} else if  (this.gioco == 'dama'){
+						next_player = (this.turn_of == 'playerA') ? 'playerB' : 'playerA';
+						if (this.just_eat == true) {
+							var possibili = this.dama_mosse_possibili(this.turn_of);
+							for (var n=0;n < possibili[MV_EAT].length; n++){
+								var possibile = possibili[MV_EAT][n];
+								if (possibile[0].x == x && possibile[0].y == y){ //devo mangiare ancora
+									console.log('si può mangiare ancora');
+									chess.cella_focus = this.get_casella(x,y);
+									next_player = this.turn_of;
+									this.cella_focus.classList.add('cella_focus');
+									this.cella_focus = this.get_casella(x,y);
+									this.from = [y,x];
+									}
+							}
+						}
+					this.dama_mosse_possibili(next_player);
 					}
+					// cambio turno
 					this.turn_of = next_player;
 					this.set_title();
 				}
 			}
 		}
 	},
-// ==================================================================== SEZIONE:DAMA
-	dama_mossa_valida: function (x1, y1){
-	var x0 = this.from[1] * 1;
-	var y0 = this.from[0] * 1;
-	var dx = this.from[1] - x1;
-	var dy = this.from[0] - y1;
-	if (this.turn_of == 'playerA') {dy *= -1}
-	if (this.mem[y1][x1] != null) {return false;} // non posso mettere dove è occupato
-	if (abs(dx) == 1 && dy == 1) {return true;}
-	if (abs(dx) == 2 && dy == 2){
-		var x_mangio = (x0/2 + x1/2);
-		var y_mangio = (y0/2 + y1/2);
-		console.log('x '+ x0 + ' this.from[1] '+ x1 + ' y '+ y0 + ' this.from[0] '+ y1);
-		console.log('y_mangio '+y_mangio + ' x_mangio '+ x_mangio);
-		var mangio = this.mem[y_mangio][x_mangio];
-		if (mangio != null && mangio[1] != this.turn_of) {
-			this.mem[y_mangio][x_mangio] = null;
-			this.disegna_casella(x_mangio,y_mangio);
-			return mangio};
+	vittoria: function() {
+		var time_now = Date.now();
+		var delta_time = (time_now - this.start_time) /1000;
+		this.msg('HAI VINTO!<br>in '+ delta_time +'sec.', 'win');
+		},
+/* ==================================================================== SEZIONE:DAMA
+
+	regole della variante italiana, si veda http://www.federdama.it/cms/attivita
+
+
+
+*/
+	dama_mossa_valida: function (x1, y1) {
+		var mangiato = false;
+		var x0 = this.from[1] * 1;
+		var y0 = this.from[0] * 1;
+		var dx = this.from[1] - x1;
+		var dy = this.from[0] - y1;
+		var risulta = false;
+		if (this.turn_of == 'playerA') {dy *= -1}
+		if (this.mem[y1][x1] != null) {return false;} // non posso mettere dove è occupato
+		if (abs(dx) == 1 && dy == 1) {risulta = true;}
+		else if (abs(dx) == 1 && abs(dy) == 1) {
+			if (dy == 1 || this.mem[y0][x0][0] == DAMONE) {risulta = true;}
+			}
+		if (abs(dx) == 2 && abs(dy) == 2){
+			if (dy == 2 || this.mem[y0][x0][0] == DAMONE) {
+				var x_mangio = (x0/2 + x1/2);
+				var y_mangio = (y0/2 + y1/2);
+				console.log('x '+ x0 + ' this.from[1] '+ x1 + ' y '+ y0 + ' this.from[0] '+ y1);
+				console.log('y_mangio '+y_mangio + ' x_mangio '+ x_mangio);
+				mangiato = true;
+				var mangio = this.mem[y_mangio][x_mangio];
+				if (mangio != null && mangio[1] != this.turn_of) {
+					if (this.mem[y_mangio][x_mangio][0] == DAMA || this.mem[y0][x0][0] == DAMONE){
+						this.mem[y_mangio][x_mangio] = null;
+						this.disegna_casella(x_mangio,y_mangio);
+						risulta = true;
+						}
+					}
+				}
+			}
+		if (risulta == true) {
+			this.just_eat = mangiato;
+			if (this.turn_of == 'playerB' && y1 == 0){
+				this.mem[y0][x0][0] = DAMONE;
+				}
+			if (this.turn_of == 'playerA' && y1 == (this.size -1)){
+				this.mem[y0][x0][0] = DAMONE;
+				}
+			}
+		return risulta;
+	},
+	dama_mosse_possibili: function (player1) {
+		var l_possibili = {};
+		l_possibili[MV_OK] = [];
+		l_possibili[MV_EAT] = [];
+		for (var y=0;y < this.size ;y++){
+			for (var x=0; x < this.size;x++){
+				if (x % 2 == y % 2){ //solo pos di gioco
+					var pos0 = {x:x,y:y, v:this.mem[y][x]};
+					this.get_casella(pos0.x, pos0.y).classList.remove(MV_OK);
+					this.get_casella(pos0.x, pos0.y).classList.remove(MV_EAT);
+					this.get_casella(pos0.x, pos0.y).title = '';
+					if (pos0.v != null && pos0.v[1] == player1){
+						for (var n = 0; n < 4; n++){
+							var pos1 = {x: 1 - 2 * (n % 2), y: 1 - 2 * ( n > 1)}; // 1 1, -1 1, 1 -1, -1 -1
+							pos1 = {x: x + pos1.x, y: y + pos1.y};
+							if (pos1.x >= 0 && pos1.y >= 0 && pos1.x < this.size && pos1.y < this.size){
+								pos1.v = this.mem[pos1.y][pos1.x];
+								if (pos1.v == null){
+									console.log(JSON.stringify(pos1));
+									if (pos0.v[0] == DAMONE) {
+										l_possibili[MV_OK].push([pos0, pos1]);
+									} else if ((player1 == 'playerA') == (pos1.y > pos0.y)) {
+										l_possibili[MV_OK].push([pos0, pos1]);
+									}
+								}
+							}
+							var pos1 = {x: 1 - 2 * (n % 2), y: 1 - 2 * ( n > 1)}; // 1 1, -1 1, 1 -1, -1 -1
+							pos_mangio = {x: x + pos1.x, y: y + pos1.y}
+							pos1 = {x: x + pos1.x * 2, y: y + pos1.y * 2};
+							if (pos1.x >= 0 && pos1.y >= 0 && pos1.x < this.size && pos1.y < this.size){
+								pos1.v = this.mem[pos1.y][pos1.x];
+								pos_mangio.v = this.mem[pos_mangio.y][pos_mangio.x];
+								if (pos1.v == null && pos_mangio.v != null && pos_mangio.v[1] != player1){
+									if (pos0.v[0] == DAMONE) {
+										l_possibili[MV_EAT].push([pos0, pos1, MV_EAT]);
+									} else if ((player1 == 'playerA') == (pos1.y > pos0.y)) {
+										l_possibili[MV_EAT].push([pos0, pos1, MV_EAT]);
+									}
+								}
+							}
+						}
+					}
+				}
+			}
 		}
-	return false;
+		for (var n = 0;n < l_possibili[MV_OK].length; n++){
+			var pos1 = l_possibili[MV_OK][n][1];
+			this.get_casella(pos1.x,pos1.y).classList.add(MV_OK);
+			//this.get_casella(pos1.x,pos1.y).title += " "+ l_possibili[MV_OK][n][0].x + ","+ l_possibili[n][0].y;
+			}
+		for (var n = 0;n < l_possibili[MV_EAT].length; n++){
+			var pos1 = l_possibili[MV_EAT][n][1];
+			this.get_casella(pos1.x,pos1.y).classList.add(MV_EAT);
+			//this.get_casella(pos1.x,pos1.y).title += " "+ l_possibili[n][0].x + ","+ l_possibili[n][0].y;
+			}
+		return l_possibili;
 	},
 // ==================================================================== SEZIONE:PUZZLE
 	puzzle_mossa_valida: function (x1,y1){
@@ -267,7 +382,9 @@ var chess = {
 		if (abs(dx)== 1 && dy == 0){esito = true}
 		if (abs(dy)== 1 && dx == 0){esito = true}
 		if (esito == true) {
-			if (this.puzzle_is_win()) {this.msg("Hai Vinto!",'win')}
+			if (this.puzzle_is_win()) {
+				this.vittoria();
+				}
 		}
 		return esito;
 	},
@@ -409,10 +526,10 @@ var chess = {
 		for (var idx_x = 0;idx_x < this.size; idx_x++){
 			for (var idx_y = 0;idx_y < this.size; idx_y++){
 				var pezzo = this.mem[idx_y][idx_x];
-				var c1 = document.getElementById('c_'+idx_x+'_'+idx_y);
+				var c1 = this.get_casella(idx_x,idx_y);
 				c1.classList.remove('scaccano');
 				if (pezzo != null){
-					var c1 = document.getElementById('c_'+idx_x+'_'+idx_y);
+					// var c1 = document.getElementById('c_'+idx_x+'_'+idx_y);
 					c1.classList.remove('sotto_scacco');
 					if (pezzo[1] == player){
 						if (pezzo[0] == RE){
@@ -435,13 +552,13 @@ var chess = {
 
 			if (this.scacchi_ipotesi(idx_x,idx_y, il_re_x, il_re_y) == true){
 				console.log("this.scacchi_ipotesi(x0="+idx_x +",y0="+idx_y +", il_re_x="+ il_re_x +", il_re_y=" +il_re_y+ ") == true");
-				var c1 = document.getElementById('c_'+idx_x+'_'+idx_y);
+				var c1 = this.get_casella(idx_x, idx_y);
 				c1.classList.add('scaccano');
 				scaccano.push([idx_x, idx_y]);
 			}
 		}
 	if (scaccano.length > 0){
-		var c1 = document.getElementById('c_'+il_re_x+'_'+il_re_y);
+		var c1 = this.get_casella(il_re_x, il_re_y);
 		c1.classList.add('sotto_scacco');
 	}
 	return scaccano;
