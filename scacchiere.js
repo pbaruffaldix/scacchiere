@@ -1,9 +1,4 @@
-function abs(x){return Math.abs(x)}
-
 const [DAMA, DAMONE, TORRE, CAVALLO,ALFIERE,REGINA,RE, PEDINA] = ['DAMA', 'DAMONE','TORRE', 'CAVALLO', 'ALFIERE', 'REGINA', 'RE','PEDINA'];
-
-const DIR_STR = {'-1.-1':'↖︎', '1.1':'↘', '-1.1':'↙', '1.-1': '↗︎' }
-
 const MV_EAT = 'mv_eat';
 const MV_OK = 'mv_ok';
 
@@ -59,10 +54,18 @@ var pos_ini = {
 
 var chess = {
 	//simboli: {TORRE:'♜', CAVALLO:'♞', ALFIERE:'♝', RE:'♚', REGINA:'♛', PEDINA:'♙', DAMA:'◉','DAMONE':'⊛'},
-	simboli: {TORRE:'♜', CAVALLO:'♞', ALFIERE:'♝', RE:'♚', REGINA:'♛', PEDINA:'<img class="tremola" src="pawn.svg">', DAMA:'◉',DAMONE:'⊛'},
+	//simboli: {TORRE:'♜', CAVALLO:'♞', ALFIERE:'♝', RE:'♚', REGINA:'♛', PEDINA:'<img class="tremola" src="pawn.svg">', DAMA:'◉',DAMONE:'⊛'},
+	simboli: {TORRE:'♜', CAVALLO:'♞', ALFIERE:'♝', RE:'♚', REGINA:'♛', PEDINA:'<img class="tremola" src="pawn.svg">', DAMA:'<img class="tremola" src="pawn.svg">',DAMONE:'⊛'},
+	debug_suggerimenti: false, // vuoi vedere le mosse possibili a dama?
 	init:function (gioco, options = {}){
 		this.start_time = Date.now();
 		this.gioco = gioco;
+		this.cpu_player = {'playerB':false, 'playerA':false}
+		if (this.gioco == 'scacchi'){this.debug_suggerimenti = true;}
+		if ('cpu_playerB' in options) {
+			console.log("playerB = CPU")
+			this.cpu_player['playerB'] = options['cpu_playerB']
+			}
 		if ('size' in options){
 			this.size = options.size;
 			this.pos_ini = pos_ini[this.gioco + this.size];
@@ -124,9 +127,10 @@ var chess = {
 		chess.set_title();
 	},
 	set_title: function(){
-		var capt = document.getElementById('caption')
+		var capt = document.getElementById('caption');
 		var h1= this.gioco.toUpperCase() + " -  è il turno di:<span class='";
-		h1+= this.turn_of+"'>" + this.turn_of + "</span>";
+		h1+= this.turn_of+"'>" + this.turn_of + "</span>"
+		if (this.cpu_player[this.turn_of] != false) {h1+= "(CPU)"}
 		capt.innerHTML = h1
 
 	},
@@ -169,7 +173,7 @@ var chess = {
 			c1.parentNode.removeChild(c1);
 		} else {
 			c1.innerHTML = chess.simboli[i1[0]]
-			if (this.gioco == 'scacchi') {
+			if (this.debug_suggerimenti) {
 				c1.innerHTML+= "<span style='font-size:14px;display:block;'>x="+x+" y="+y+"</span>";
 				}
 		}
@@ -183,6 +187,7 @@ var chess = {
 		this.from = null;
 		},
 	cliccato: function (x,y){
+		// questa è la vera azione di gioco
 		var i1 = this.mem[y][x];
 		if (this.from == null){
 			if (i1 == null){
@@ -198,6 +203,7 @@ var chess = {
 			chess.msg(i1,'log');
 		chess.cella_focus = this.get_casella(x,y);
 		chess.cella_focus.classList.add('cella_focus');
+		this.dama_mosse_possibili(this.turn_of);
 
 		} else {
 			var y_from = this.from[0];
@@ -210,12 +216,26 @@ var chess = {
 				this.sfocalizza();
 				return true;
 			} else {
-				// posso muovere
+				// potrei muovere
 				var esito_mossa = this.mossa_valida(x, y);
 				if (esito_mossa == false){
 					this.msg('mossa non valida','err');
 				} else {
-					// mosso
+					if (this.gioco == 'dama'){
+						// regola del soffiato: potevo mangiare ma non l'ho fatto
+						if (this.just_eat == false) {
+							var potevo = this.dama_mosse_possibili(this.turn_of);
+							if (potevo[MV_EAT].length > 0){
+								var elimino = potevo[MV_EAT][0][0];
+								this.msg('pedina Soffiata!' + elimino.x + "." + elimino.y,'err');
+								this.mem[elimino.y][elimino.x] = null;
+								this.disegna_casella(elimino.x, elimino.y);
+
+							}
+						}
+
+					}
+					// ---- movimento della pedina scelta
 					this.msg('Mossa x='+ x_from + ' y=' + y_from + 'in x=' + x + ' y=' + y ,'log');
 					this.mem[y][x] = chess.mem[y_from][x_from];
 					this.mem[y_from][x_from] = null;
@@ -235,6 +255,9 @@ var chess = {
 							this.msg('Scacco a '+ next_player + "!",'info');
 							}
 					} else if (this.gioco == 'puzzle'){
+						if (this.puzzle_is_win()) {
+							this.vittoria();
+						}
 						next_player = this.turn_of;
 					} else if  (this.gioco == 'dama'){
 						next_player = (this.turn_of == 'playerA') ? 'playerB' : 'playerA';
@@ -252,11 +275,19 @@ var chess = {
 									}
 							}
 						}
-					this.dama_mosse_possibili(next_player);
+					var altro = this.dama_mosse_possibili(next_player);
+					if (altro.mv_eat.length == 0 && altro.mv_ok.length == 0){
+						this.vittoria;
+						}
 					}
 					// cambio turno
 					this.turn_of = next_player;
 					this.set_title();
+					if (this.cpu_player[this.turn_of] != false){
+						// se l'laltro è una CPU
+						console.log('gioca CPU')
+						this.cpu_player[this.turn_of].una_mossa();
+					}
 				}
 			}
 		}
@@ -267,9 +298,15 @@ var chess = {
 		this.msg('HAI VINTO!<br>in '+ delta_time +'sec.', 'win');
 		},
 /* ==================================================================== SEZIONE:DAMA
-
+	  
+	 ***    **   *   *   **
+	 *  *  *  *  ** **  *  *
+	 *  *  ****  * * *  ****
+	 *  *  *  *  *   *  *  *
+	 ***   *  *  *   *  *  *
+	 
 	regole della variante italiana, si veda http://www.federdama.it/cms/attivita
-
+	con anche il "soffiato"
 
 
 */
@@ -290,7 +327,7 @@ var chess = {
 			if (dy == 2 || this.mem[y0][x0][0] == DAMONE) {
 				var x_mangio = (x0/2 + x1/2);
 				var y_mangio = (y0/2 + y1/2);
-				console.log('x '+ x0 + ' this.from[1] '+ x1 + ' y '+ y0 + ' this.from[0] '+ y1);
+				//console.log('x '+ x0 + ' this.from[1] '+ x1 + ' y '+ y0 + ' this.from[0] '+ y1);
 				console.log('y_mangio '+y_mangio + ' x_mangio '+ x_mangio);
 				mangiato = true;
 				var mangio = this.mem[y_mangio][x_mangio];
@@ -332,7 +369,6 @@ var chess = {
 							if (pos1.x >= 0 && pos1.y >= 0 && pos1.x < this.size && pos1.y < this.size){
 								pos1.v = this.mem[pos1.y][pos1.x];
 								if (pos1.v == null){
-									console.log(JSON.stringify(pos1));
 									if (pos0.v[0] == DAMONE) {
 										l_possibili[MV_OK].push([pos0, pos1]);
 									} else if ((player1 == 'playerA') == (pos1.y > pos0.y)) {
@@ -349,8 +385,12 @@ var chess = {
 								if (pos1.v == null && pos_mangio.v != null && pos_mangio.v[1] != player1){
 									if (pos0.v[0] == DAMONE) {
 										l_possibili[MV_EAT].push([pos0, pos1, MV_EAT]);
+										console.log('posso mangiare perchè DAMONE');
+									} else if (pos0.v[0] == DAMA && pos_mangio.v[0] == DAMONE) {
+										console.log('dama non può mangiare DAMONE');
 									} else if ((player1 == 'playerA') == (pos1.y > pos0.y)) {
 										l_possibili[MV_EAT].push([pos0, pos1, MV_EAT]);
+										console.log('posso mangiare perchè dir. di marcia');
 									}
 								}
 							}
@@ -361,13 +401,13 @@ var chess = {
 		}
 		for (var n = 0;n < l_possibili[MV_OK].length; n++){
 			var pos1 = l_possibili[MV_OK][n][1];
-			this.get_casella(pos1.x,pos1.y).classList.add(MV_OK);
-			//this.get_casella(pos1.x,pos1.y).title += " "+ l_possibili[MV_OK][n][0].x + ","+ l_possibili[n][0].y;
+			if (this.debug_suggerimenti) {
+				this.get_casella(pos1.x,pos1.y).classList.add(MV_OK);
+			}
 			}
 		for (var n = 0;n < l_possibili[MV_EAT].length; n++){
 			var pos1 = l_possibili[MV_EAT][n][1];
 			this.get_casella(pos1.x,pos1.y).classList.add(MV_EAT);
-			//this.get_casella(pos1.x,pos1.y).title += " "+ l_possibili[n][0].x + ","+ l_possibili[n][0].y;
 			}
 		return l_possibili;
 	},
@@ -381,11 +421,6 @@ var chess = {
 		//if (this.mem[y1][x1] != null) {return false}
 		if (abs(dx)== 1 && dy == 0){esito = true}
 		if (abs(dy)== 1 && dx == 0){esito = true}
-		if (esito == true) {
-			if (this.puzzle_is_win()) {
-				this.vittoria();
-				}
-		}
 		return esito;
 	},
 	puzzle_mischia: function(volte) {
@@ -409,13 +444,16 @@ var chess = {
 		for (var n = 0; n < (this.size ** 2 -1);n++){
 			var y = Math.floor(n/this.size);
 			var x = n % this.size;
-			if (this.mem[y][x] != null) {
-				if (this.mem[y][x][0] != (n+1)){
+			if (this.mem[y][x] == null){
 				console.log(['ok fino a ', n])
-				return false}
+				return false;
+			} else if (this.mem[y][x][0] != (n+1)){
+				console.log(['ok fino a ', n])
+				return false;
 			}
 		}
-		return true
+		console.log(['ok fino a ', n])
+		return true;
 	},
 // ==================================================================== SEZIONE:BASTIGLIA
 	bastiglia_mossa_valida: function (x1,y1){
@@ -529,7 +567,6 @@ var chess = {
 				var c1 = this.get_casella(idx_x,idx_y);
 				c1.classList.remove('scaccano');
 				if (pezzo != null){
-					// var c1 = document.getElementById('c_'+idx_x+'_'+idx_y);
 					c1.classList.remove('sotto_scacco');
 					if (pezzo[1] == player){
 						if (pezzo[0] == RE){
@@ -576,6 +613,9 @@ var chess = {
 	}
 }
 
+// funzioni di servizio
+
+function abs(x){return Math.abs(x)}
 
 // I18N
 
@@ -584,6 +624,7 @@ var i18n_diz = {
 	'en':{
 		"Dama": "Draughts",
 		"Giugno": "June",
+		"Luglio": "July",
 		"Puzzle immagine": "Image Puzzle",
 		"Puzzle numerico": "Numeric Puzzle",
 		"Scacchi": "Chess",
@@ -604,10 +645,12 @@ function span_i18n(lang='en'){
 	var thisNode = spans.iterateNext();
 	var cambiare = [];
   	while (thisNode) {
-  		var txt = thisNode.firstChild.nodeValue;
-  		i18n_diz['it'][txt] = txt; // find the text you need to translate
-  		console.log(thisNode.firstChild);
-  		cambiare.push(thisNode.firstChild);
+  		if (thisNode.firstChild != null){
+			var txt = thisNode.firstChild.nodeValue;
+			i18n_diz['it'][txt] = txt; // find the text you need to translate
+			console.log(thisNode.firstChild);
+			cambiare.push(thisNode.firstChild);
+		}
   		thisNode = spans.iterateNext();
     }
     for (var x = 0; x < cambiare.length; x++){
@@ -615,4 +658,9 @@ function span_i18n(lang='en'){
     	}
     console.log("you must translate");
     console.log(i18n_diz['it']);
+}
+
+function debug_mode(scelta=true) {
+	chess.debug_suggerimenti=scelta;
+	console.log("chess.debug_suggerimenti=true");
 }

@@ -19,8 +19,8 @@
 
 h2 {text-align:center;font-family: Papyrus,fantasy; }
 
-
 #box_scacchiera {border: solid 1px;blue;width:90vh;height:90vh;position:absolute;left:5px;top:5vh}
+
 .casella {
 	border:solid 1px black;
 	width:12.4%;height:12.5%;font-size:80px;padding:0;text-align:center;
@@ -74,19 +74,15 @@ h2 {text-align:center;font-family: Papyrus,fantasy; }
 @keyframes anim_focus {
 	0% {
 		transform:rotateY(0deg);
-
 	}
 	25% {
 		transform:rotateY(45deg);
-
 		}
 	50% {
 		transform:rotateY(0deg);
-
 	}
 	75% {
 		transform:rotateY(-45deg);
-
 		}
 }
 
@@ -115,7 +111,10 @@ h2 {text-align:center;font-family: Papyrus,fantasy; }
 
 .mv_eat {border:solid 5px red;border-radius:1vh;}
 
-#scelta_gioco .casella {position:relative;height:24vh;width:24vh;font-size:60px;}
+#scelta_gioco {width:100vw;}
+#scelta_gioco .casella {position:relative;height:10vh;width:20vw;font-size:40px;float:left;}
+
+#scelta_gioco h3 {clear:both;background-color:var(-col2);}
 
 #box_msg {position:absolute;left:20vw;top:20vh;width:60vw;height:200px;
 	border:solid 5px var(--col1);
@@ -132,67 +131,103 @@ h2 {text-align:center;font-family: Papyrus,fantasy; }
 </head>
 <body>
 <script src="scacchiere.js"></script>
-<script>chess.msg('ciao');</script>
-<h2 id="caption"></h2>
+<script src="dama_bots.js"></script>
+
+<h2><span id="caption"><span>Scegliere il Gioco</span></span><input type="button" value="CPU" onclick="chess.cpu_player[chess.turn_of].una_mossa()"></h2>
+
 <div id="box_scacchiera">
-	<h2><span>Scegliere il Gioco</span>:</h2>
 	<div id="scelta_gioco">
-	<table>
-	<tr>
-		<td><div onclick="new_game('puzzle',{'size':3})" class="casella"><span>Puzzle numerico</span> 3x3</div></td>
-		<td><div onclick="new_game('puzzle',{'size':4})" class="casella pari"><span>Puzzle numerico</span> 4x4</div></td>
-		<td><div onclick="new_game('puzzle',{'size':5})" class="casella"><span>Puzzle numerico</span> 5x5</div></td>
-	</tr><tr>
-		<td><div onclick="new_game('bastiglia')" class="casella pari"><span>Solitario della Bastiglia</span></div></td>
-		<td><div onclick="new_game('bastiglia',{'pos_ini':'bastiglia_ue'})" class="casella"><span>Solitario della Bastiglia Europeo</span></div></td>
-		<td><div onclick="new_game('dama')" class="casella pari beta_version"><span>Dama</span> ◉ (<i>ludus dominarum</i>)</div></td>
-	</tr><tr>
-		<td><div onclick="new_game('puzzle',{'size':3,'image':'puzzle$.jpg'})" class="casella"><span>Puzzle immagine</span> 3x3</div>
-		<td><div onclick="new_game('puzzle',{'size':4,'image':'sdq$.jpg'})" class="casella pari"><span>Puzzle immagine</span> 4x4</div>
-		<td><div onclick="new_game('scacchi')" class="casella beta_version"><span>Scacchi</span> ♚ (partial)</div></td>
-	</tr>
-	</table>
-</div>
+		<h3>Puzzle</h3>
+			<div onclick="new_game('puzzle',{'size':3})" class="casella"><span>Puzzle numerico</span> 3x3</div>
+			<div onclick="new_game('puzzle',{'size':4})" class="casella pari"><span>Puzzle numerico</span> 4x4</div>
+			<div onclick="new_game('puzzle',{'size':5})" class="casella"><span>Puzzle numerico</span> 5x5</div>
+			<div onclick="new_game('puzzle',{'size':3,'image':'puzzle$.jpg'})" class="casella pari"><span>Puzzle immagine</span> 3x3</div>
+			<div onclick="new_game('puzzle',{'size':4,'image':'sdq$.jpg'})" class="casella"><span>Puzzle immagine</span> 4x4</div>
+		<h3><i>Ludos Dominatorum</i></h3>
+			<div onclick="new_game('dama')" class="casella pari beta_version"><span>Dama</span> ◉ 2p</div>
+			<div onclick="new_game('dama',{cpu_playerB:CPU_DAMA1})" class="casella beta_version"><span>Dama</span> ◉ 1p vs CPU-1 </div>
+			<div onclick="new_game('dama',{cpu_playerB:CPU_DAMA2})" class="casella pari beta_version"><span>Dama</span> ◉ 1 vs CPU-2</div>
+			<div onclick="new_game('dama')" class="casella beta_version"><span>Dama</span> ◉ 1 vs CPU-3</div>
+		<h3>Other</h3>
+			<div onclick="new_game('bastiglia')" class="casella pari"><span>Solitario della Bastiglia</span></div>
+			<div onclick="new_game('bastiglia',{'pos_ini':'bastiglia_ue'})" class="casella"><span>Solitario della Bastiglia Europeo</span></div>
+			<div onclick="new_game('scacchi')" class="casella  beta_version"><span>Scacchi</span> ♚ (partial)</div>
+	</div>
 	<div>&nbsp;</div>
-	<div style="color:#888800;text-align:center;">Warning: <i>Draughts</i> game is not complete yet and <i>Chess</i> has bugs on <i>check</i> / <i>check mate</i> procedure</div>
-	<div style="text-align:right;padding-right:20px;"> by Paolo Baruffaldi<br><a href="email:baruffaldi.p@gmail.com">baruffaldi.p@gmail.com</a><br><span>Giugno</span> 2020</div>
+	<div style="color:#888800;text-align:center;">Warning: <i>Chess</i> game it's complete: has bugs on <i>check</i> / <i>check mate</i> procedure</div>
+	<div style="text-align:right;padding-right:20px;"> by Paolo Baruffaldi<br><a href="email:baruffaldi.p@gmail.com">baruffaldi.p@gmail.com</a><br><span>Luglio</span> 2020</div>
 </div>
 <div id="box_msg" onclick="this.style.display='none';">Errore
 
 
 </div>
 <script>
-
 function crea_scacchiera(gioco,options = {}){
-
+	// modifica il css di ".casella"
 	document.styleSheets[0].cssRules[3].style.width=(100/chess.size)+'%';
 	document.styleSheets[0].cssRules[3].style.height=(100/chess.size)+'%';
 
 	var r1 = document.getElementById('box_scacchiera');
 	for (var y=0;y < chess.size;y++){
-	for (var x=0;x < chess.size;x++){
-		var j = document.createElement('div');
-		var id1 = 'c_'+x+'_'+y;
-		j.id = id1;
-		j.style.left = (x*100/chess.size)+"%";
-		j.style.top = (y*100/chess.size)+"%";
-		j.classList.add('casella');
-		j.setAttribute('onClick','chess.cliccato("'+x+'","'+y+'")');
-		if ((x+y) % 2 == 0) {j.classList.add('pari')}
-		r1.appendChild(j);
-		chess.disegna_casella(x,y);
-
-
-	}
+		for (var x=0;x < chess.size;x++){
+			var j = document.createElement('div');
+			var id1 = 'c_'+x+'_'+y;
+			j.id = id1;
+			j.style.left = (x*100/chess.size)+"%";
+			j.style.top = (y*100/chess.size)+"%";
+			j.classList.add('casella');
+			j.setAttribute('onClick','chess.cliccato("'+x+'","'+y+'")');
+			if ((x+y) % 2 == 0) {j.classList.add('pari')}
+			r1.appendChild(j);
+			chess.disegna_casella(x,y);
+		}
 	}
 
 }
 
+var CPU_DAMA2 = {
+	/*
+	 1) se posso mangiare mangio
+	 2) se non posso mangiare mi muovo
+	*/
+	una_mossa: function() {
+		return this.una_mossa_AI1();
+		},
+	una_mossa_AI1: function () {
+		/*
+		se posso mangiare mangio
+		se non posso sposto
+		*/
+		console.log('AI1 pensa...');
+		var cpu_possibili = chess.dama_mosse_possibili(chess.turn_of);
+		if (cpu_possibili[MV_EAT].length > 0){
+			var scelto = cpu_possibili[MV_EAT][Math.floor(Math.random() * cpu_possibili[MV_EAT].length)];
+
+		} else {
+			var scelto = cpu_possibili[MV_OK][Math.floor(Math.random() * cpu_possibili[MV_OK].length)];
+		}
+		chess.cliccato(scelto[0].x, scelto[0].y);
+		chess.cliccato(scelto[1].x, scelto[1].y);
+		console.log('AI1 fatto...');
+	},
+	una_mossa_AI2: function () {
+		var cpu_possibili = chess.dama_mosse_possibili(chess.turn_of);
+		var ranked = []
+		for (var n = 0;n < cpu_possibili[MV_EAT].length;n++){
+			punti = 50 // mangiare = 50pti
+			var opzione = cpu_possibili[MV_EAT];
+		}
+	},
+	get_davanti: function(x,y) {
+
+	}
+}
 
 function new_game(gioco, options = {}){
 	chess.init(gioco, options);
 	document.getElementById('box_scacchiera').innerHTML = '';
 	crea_scacchiera(gioco, options);
+	CPU_DAMA1.link_chessboard(chess);
 }
 
 span_i18n();
